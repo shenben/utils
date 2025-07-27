@@ -39,11 +39,13 @@ function prepare_rxe() {
   if ! lsmod | grep pseudo_mm_rdma; then
     echo "do not found pseudo_mm_rdma modules, start rdma server and insmod..."
     echo "WORKDIR: ${WORKDIR}"
-    stdbuf -o0 ${WORKDIR}/pseudo-mm-rdma-server 50000 &> $TEMPDIR/rdma-server.log &
-    local ip_address=$(ip -f inet addr show ${ETH_INTERFACE} | sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
-    echo "prepare rxe for interface $ETH_INTERFACE: ip address is ${ip_address}"
+    # stdbuf -o0 ${WORKDIR}/pseudo-mm-rdma-server 50000 &> $TEMPDIR/rdma-server.log &
+    # local ip_address=$(ip -f inet addr show ${ETH_INTERFACE} | sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
+    local sip_address="172.16.2.1"
+    local cip_address="172.16.2.2"
+    echo "prepare rxe for interface $ETH_INTERFACE: ip address is ${sip_address} "
     sleep 5
-    modprobe pseudo_mm_rdma sport=50000 sip="${ip_address}" cip="${ip_address}" node=0
+    modprobe pseudo_mm_rdma sport=50000 sip="${sip_address}" cip="${cip_address}" node=0
   fi
 }
 
