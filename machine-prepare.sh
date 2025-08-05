@@ -39,10 +39,10 @@ function prepare_rxe() {
   if ! lsmod | grep pseudo_mm_rdma; then
     echo "do not found pseudo_mm_rdma modules, start rdma server and insmod..."
     echo "WORKDIR: ${WORKDIR}"
-    # stdbuf -o0 ${WORKDIR}/pseudo-mm-rdma-server 50000 &> $TEMPDIR/rdma-server.log &
+    stdbuf -o0 ${WORKDIR}/pseudo-mm-rdma-server 50000 &> /users/id_17/faasnap/rdma-server.log &
     # local ip_address=$(ip -f inet addr show ${ETH_INTERFACE} | sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
     local sip_address="172.16.2.1"
-    local cip_address="172.16.2.2"
+    local cip_address="172.16.2.1"
     echo "prepare rxe for interface $ETH_INTERFACE: ip address is ${sip_address} "
     sleep 5
     modprobe pseudo_mm_rdma sport=50000 sip="${sip_address}" cip="${cip_address}" node=0
@@ -50,8 +50,8 @@ function prepare_rxe() {
 }
 
 function prepare_faasnap() {
-  echo "please remember mount cxl tmpfs to /mnt/cxl-tmp!"
-  echo "please remember create directory /mnt/cxl-tmp/faasnap/snapshot!"
+  echo "please remember mount cxl tmpfs to /mnt/data!"
+  echo "please remember create directory /mnt/data/faasnap/snapshot!"
   # if ! mount | grep -P '/mnt/cxl-tmp.*bind:2' &> /dev/null; then
   #   echo "please mount cxl tmpfs to /mnt/cxl-tmp first"
   #   exit 1
@@ -59,7 +59,7 @@ function prepare_faasnap() {
   cd $FAASNAP_DIR
   cp faasnap.json /etc/faasnap.json
   # ./prep.sh
-  # mkdir -p /mnt/cxl-tmp/faasnap/snapshot
+  mkdir -p /mnt/data/faasnap/snapshot
   cd -
 }
 
@@ -227,9 +227,9 @@ if [ "$POOL_TYPE" == "rdma" ]; then
   prepare_rxe
 fi
 
-# if ! ip netns list | grep -P 'fc9'; then
-prepare_faasnap
-# fi
+if ! ip netns list | grep -P 'fc9'; then
+  prepare_faasnap
+fi
 
 # task in prepare need only done once
 # when the machine is boot up
@@ -252,7 +252,7 @@ start_containerd $TEMPDIR
 download_ctr_images
 
 # faasd install need resolve.conf and network.sh
-cd /root/go/src/github.com/openfaas/faasd
+cd ~/go/src/github.com/openfaas/faasd
 faasd install
 cd $WORKDIR
 umount /var/lib/faasd/checkpoints || true
@@ -266,3 +266,5 @@ enable_switch_criu
 generate_cp
 
 echo "machine prepare succeed!"
+
+# bash machine-prepare.sh --mem-pool rdma --nic  ibp130s0
